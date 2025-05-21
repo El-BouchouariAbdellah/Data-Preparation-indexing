@@ -15,45 +15,49 @@ def create_report_csv(stats_data):
     total_image_based = 0
     total_text_based = 0
     total_corrupted = 0
-    
-    csv_file_path = os.path.join(os.getcwd(), grade_name +'_analysis_report.csv')
-    with open(csv_file_path, "w", newline='',encoding='UTF-8') as csvfile:
-        fieldnames = ['Subject', 'Image-based PDFs', 'Text-based PDFs', 'Corrupted PDFs', 'Total PDFs'] 
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for subject, data in stats_data.items():
+    try:
+        csv_file_path = os.path.join(os.getcwd(), grade_name +'_analysis_report.csv')
+        with open(csv_file_path, "w", newline='',encoding='UTF-8') as csvfile:
+            fieldnames = ['Subject', 'Image-based PDFs', 'Text-based PDFs', 'Corrupted PDFs', 'Total PDFs'] 
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for subject, data in stats_data.items():
+                writer.writerow({
+                    'Subject': subject,
+                    'Image-based PDFs': data['image_based'],
+                    'Text-based PDFs': data['text_based'],
+                    'Corrupted PDFs': data['corrupted'],
+                    'Total PDFs': data['total']
+                })
+                total_image_based += data['image_based']
+                total_text_based += data['text_based']
+                total_corrupted += data['corrupted']
+            
             writer.writerow({
-                'Subject': subject,
-                'Image-based PDFs': data['image_based'],
-                'Text-based PDFs': data['text_based'],
-                'Corrupted PDFs': data['corrupted'],
-                'Total PDFs': data['total']
+                'Subject': 'Total',
+                'Image-based PDFs': total_image_based,
+                'Text-based PDFs': total_text_based,
+                'Corrupted PDFs': total_corrupted,
+                'Total PDFs': total_image_based + total_text_based + total_corrupted
             })
-            total_image_based += data['image_based']
-            total_text_based += data['text_based']
-            total_corrupted += data['corrupted']
-        
-        writer.writerow({
-            'Subject': 'Total',
-            'Image-based PDFs': total_image_based,
-            'Text-based PDFs': total_text_based,
-            'Corrupted PDFs': total_corrupted,
-            'Total PDFs': total_image_based + total_text_based + total_corrupted
-        })
-    print(f"Report saved to {csv_file_path}")
-    return csv_file_path
+        print(f"Report saved to {csv_file_path}")
+        return csv_file_path
+    except Exception as e:
+        print(f"Error creating CSV report: {e}")
+        return None
 
 
 def is_image_based_pdf(pdf_path, ocr_path, corr_path):
-    """Check if a PDF is primarily image-based (requires OCR)."""
+    doc = None #Initialize doc to None so it can be closed in the finally block
     try:
+        if isinstance(pdf_path, str):
+            pdf_path = os.path.normpath(pdf_path)
         doc = fitz.open(pdf_path)
         pages_to_check = min(2, len(doc))
         text_content = ""
         for page_num in range(pages_to_check):
             page = doc[page_num]
             text_content += page.get_text()
-        doc.close()
 
         if len(text_content.strip()) < 100 * pages_to_check:
             try:
@@ -73,6 +77,9 @@ def is_image_based_pdf(pdf_path, ocr_path, corr_path):
         except Exception as e:
             print(f"Error copying corrupted file: {e}")
         return None
+    finally:
+        if doc is not None:
+            doc.close()
 
 
 OCR_counter = 0
@@ -133,5 +140,4 @@ for subject in os.listdir(grade_folder):
 print(f"Total image-based PDFs: {OCR_counter}")
 print(f"Total text-based PDFs: {Text_counter}")
 print(f"Total corrupted PDFs: {Corrupted_counter}")
-
 csv_file_path = create_report_csv(stats_data)

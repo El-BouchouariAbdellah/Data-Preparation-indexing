@@ -4,6 +4,7 @@ import shutil
 import csv
 
 grade_folder = r'C:\Users\abdel\Desktop\curriculum\الثالثة اعدادي'
+grade_name = os.path.basename(grade_folder)
 
 # Check if the grade folder exists
 if not os.path.isdir(grade_folder):
@@ -15,7 +16,7 @@ def create_report_csv(stats_data):
     total_text_based = 0
     total_corrupted = 0
     
-    csv_file_path = os.path.join(os.getcwd(), 'pdf_analysis_report.csv')
+    csv_file_path = os.path.join(os.getcwd(), grade_name +'_analysis_report.csv')
     with open(csv_file_path, "w", newline='',encoding='UTF-8') as csvfile:
         fieldnames = ['Subject', 'Image-based PDFs', 'Text-based PDFs', 'Corrupted PDFs', 'Total PDFs'] 
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -80,7 +81,7 @@ Corrupted_counter = 0
 stats_data = {}
 
 for subject in os.listdir(grade_folder):
-    if subject.endswith("_OCR") or subject.endswith("_corrupted"):
+    if subject.endswith("_OCR") or subject.endswith("_corrupted"): # To avoid recursive processing
         print(f" ❌❌ Skipping '{subject}' as it is an OCR or corrupted folder")
         continue
     subject_path = os.path.join(grade_folder, subject)

@@ -46,7 +46,7 @@ OCR_counter = 0
 Text_counter = 0
 
 for subject in os.listdir(grade_folder):
-    if subject.endswith("_OCR") or subject.endswith("_corrupted"):
+    if subject.endswith("_OCR") or subject.endswith("_corrupted"): # To avoid recursive processing
         print(f" ❌❌ Skipping '{subject}' as it is an OCR or corrupted folder")
         continue
     subject_path = os.path.join(grade_folder,subject)

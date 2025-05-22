@@ -3,7 +3,7 @@ import fitz
 import shutil
 import csv
 
-grade_folder = r'C:\Users\abdel\Desktop\curriculum\الثالثة اعدادي'
+grade_folder = r'C:\Users\abdel\Desktop\الثالثة اعدادي'
 grade_name = os.path.basename(grade_folder)
 
 # Check if the grade folder exists
@@ -48,38 +48,38 @@ def create_report_csv(stats_data):
 
 
 def is_image_based_pdf(pdf_path, ocr_path, corr_path):
-    doc = None #Initialize doc to None so it can be closed in the finally block
+    doc = None
     try:
-        if isinstance(pdf_path, str):
-            pdf_path = os.path.normpath(pdf_path)
+        pdf_path = os.path.normpath(pdf_path)
         doc = fitz.open(pdf_path)
         pages_to_check = min(2, len(doc))
         text_content = ""
         for page_num in range(pages_to_check):
-            page = doc[page_num]
-            text_content += page.get_text()
+            text_content += doc[page_num].get_text()
 
-        if len(text_content.strip()) < 100 * pages_to_check:
-            try:
-                shutil.copy(pdf_path, ocr_path)  # Copy to OCR folder
-                print(f"Copied {os.path.basename(pdf_path)} to OCR folder.")
-            except Exception as e:
-                print(f"Error copying file to OCR folder: {e}")
-            return True
-        return False
+        is_image = len(text_content.strip()) < 100 * pages_to_check
 
     except Exception as e:
         print(f"Error analyzing {pdf_path}: {e}")
         try:
-            # Move file to corrupted folder
-            os.rename(pdf_path, os.path.join(corr_path, os.path.basename(pdf_path)))
-            print(f"Copied corrupted file to: {corr_path}")
-        except Exception as e:
-            print(f"Error copying corrupted file: {e}")
+            shutil.move(pdf_path, os.path.join(corr_path, os.path.basename(pdf_path)))
+            print(f"Moved corrupted file to: {corr_path}")
+        except Exception as move_err:
+            print(f"Error moving corrupted file: {move_err}")
         return None
+
     finally:
-        if doc is not None:
+        if doc:
             doc.close()
+
+    if is_image:
+        try:
+            shutil.move(pdf_path, os.path.join(ocr_path, os.path.basename(pdf_path)))
+            print(f"Moved {os.path.basename(pdf_path)} to OCR folder.")
+        except Exception as e:
+            print(f"Error moving file to OCR folder: {e}")
+        return True
+    return False
 
 
 OCR_counter = 0

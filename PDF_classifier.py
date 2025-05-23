@@ -2,8 +2,13 @@ import os
 import fitz
 import shutil
 import csv
+import sys
 
-grade_folder = r'C:\Users\abdel\Desktop\الثالثة اعدادي'
+if len(sys.argv) > 1:
+    grade_folder = sys.argv[1]
+else:
+    grade_folder = input("Enter the path to the grade folder: ").strip()
+
 grade_name = os.path.basename(grade_folder)
 
 # Check if the grade folder exists

@@ -1,33 +1,114 @@
 import os
 import sys
+import gc
 from pdf2image import convert_from_path
 from PIL import Image
 
-def convert_pdf_to_images(pdf_path, output_folder=None, dpi=300):
+def convert_pdf_to_images(pdf_path, output_folder=None, pdf_name_for_filename=None, dpi=200):
+    """
+    Convert a single PDF to images with memory optimization
+    
+    Args:
+        pdf_path: Path to the PDF file
+        output_folder: Folder to save images
+        pdf_name_for_filename: PDF name to include in image filenames
+        dpi: Resolution for conversion (reduced from 300 to 200 for performance)
+    
+    Returns:
+        Number of pages converted
+    """
     try:
-        print(f"Converting {os.path.basename(pdf_path)} to images...")
+        print(f"Converting {os.path.basename(pdf_path)}...")
         
-        pages = convert_from_path(pdf_path, dpi=dpi, fmt='JPEG')
+        if output_folder:
+            os.makedirs(output_folder, exist_ok=True)
         
-        processed_images = []
-        for i, page in enumerate(pages):
-            processed_images.append(page)
-            
-            # Save image if output folder is specified
-            if output_folder:
-                os.makedirs(output_folder, exist_ok=True)
-                image_path = os.path.join(output_folder, f"page_{i+1}.jpg")
-                page.save(image_path, 'JPEG', quality=95)
-                print(f"  Saved: {image_path}")
+        # Process pages in batches to manage memory
+        batch_size = 5  # Process 5 pages at a time
+        page_count = 0
         
-        print(f"✅ Successfully converted {len(processed_images)} pages from {os.path.basename(pdf_path)}")
-        return processed_images
+        # Get total page count first (lightweight operation)
+        try:
+            # Use a small DPI just to count pages
+            temp_pages = convert_from_path(pdf_path, dpi=50, fmt='JPEG', first_page=1, last_page=1)
+            del temp_pages
+            gc.collect()
+        except:
+            pass
+        
+        current_page = 1
+        
+        while True:
+            try:
+                # Convert pages in small batches
+                pages = convert_from_path(
+                    pdf_path, 
+                    dpi=dpi, 
+                    fmt='JPEG',
+                    first_page=current_page,
+                    last_page=current_page + batch_size - 1,
+                    thread_count=1  # Limit threads to reduce memory usage
+                )
+                
+                if not pages:
+                    break
+                
+                # Process and save each page immediately
+                for i, page in enumerate(pages):
+                    page_num = current_page + i
+                    page_count += 1
+                    
+                    if output_folder:
+                        # Optimize image before saving
+                        if page.mode != 'RGB':
+                            page = page.convert('RGB')
+                        
+                        image_filename = f"{pdf_name_for_filename}_page_{page_num}.jpg"
+                        image_path = os.path.join(output_folder, image_filename)
+                        
+                        # Save with optimized settings
+                        page.save(image_path, 'JPEG', quality=85, optimize=True)
+                        print(f"  Saved: {image_filename}")
+                    
+                    # Clear page from memory immediately
+                    page.close()
+                    del page
+                
+                # Clear the batch from memory
+                del pages
+                gc.collect()  # Force garbage collection
+                
+                current_page += batch_size
+                
+            except Exception as batch_error:
+                # If we can't get more pages, we're done
+                if "Invalid page" in str(batch_error) or "out of range" in str(batch_error):
+                    break
+                else:
+                    print(f"  ⚠️  Batch error at page {current_page}: {batch_error}")
+                    current_page += 1
+                    continue
+        
+        print(f"✅ Converted {page_count} pages from {os.path.basename(pdf_path)}")
+        return page_count
         
     except Exception as e:
         print(f"❌ Error converting {pdf_path}: {e}")
-        return []
+        return 0
+    finally:
+        # Ensure cleanup
+        gc.collect()
 
-def convert_folder_to_images(folder_path, output_base_folder=None):
+def convert_folder_to_images(folder_path):
+    """
+    Convert all PDFs in a folder structure to images with memory optimization
+    
+    Args:
+        folder_path: Root folder containing subfolders with PDFs
+    
+    Returns:
+        Dictionary with results per subject
+    """
     results = {}
     
     if not os.path.exists(folder_path):
@@ -35,17 +116,25 @@ def convert_folder_to_images(folder_path, output_base_folder=None):
         return results
     
     # Get all subdirectories (subjects)
-    subjects = [d for d in os.listdir(folder_path) 
-               if os.path.isdir(os.path.join(folder_path, d))]
-    
-    if not subjects:
-        print(f"⚠️  No subject subdirectories found in {folder_path}")
+    try:
+        subjects = [d for d in os.listdir(folder_path) 
+                   if os.path.isdir(os.path.join(folder_path, d))]
+    except PermissionError:
+        print(f"❌ Permission denied accessing {folder_path}")
         return results
     
-    print(f"Found {len(subjects)} subject folders: {subjects}")
+    if not subjects:
+        print(f"⚠️  No subdirectories found in {folder_path}")
+        return results
     
-    for subject in subjects:
+    print(f"Found {len(subjects)} subject folders")
+    
+    total_pdfs = 0
+    total_images = 0
+    
+    for subject_idx, subject in enumerate(subjects, 1):
         subject_path = os.path.join(folder_path, subject)
+        print(f"\n📁 [{subject_idx}/{len(subjects)}] Processing: {subject}")
         
         # Get all PDF files in this subject folder
         try:
@@ -59,59 +148,54 @@ def convert_folder_to_images(folder_path, output_base_folder=None):
             print(f"⚠️  No PDF files found in {subject}")
             continue
         
-        print(f"Found {len(pdf_files)} PDF files: {pdf_files}")
+        print(f"Found {len(pdf_files)} PDF files")
         
-        subject_results = {}
+        # Create single output folder for this subject
+        subject_output_folder = os.path.join(subject_path, f"output_images_{subject}")
         
-        for pdf_file in pdf_files:
+        subject_images = 0
+        
+        for pdf_idx, pdf_file in enumerate(pdf_files, 1):
             pdf_path = os.path.join(subject_path, pdf_file)
             pdf_name = os.path.splitext(pdf_file)[0]
             
-            # Determine output folder
-            if output_base_folder:
-                # Create organized structure: output_base/subject/pdf_name/
-                pdf_output_folder = os.path.join(output_base_folder, subject, pdf_name)
-            else:
-                # Create output folder next to the PDF
-                pdf_output_folder = os.path.join(subject_path, f"{pdf_name}_images")
-            
-            print(f"  📄 Converting: {pdf_file}")
-            print(f"     Output to: {pdf_output_folder}")
+            print(f"  📄 [{pdf_idx}/{len(pdf_files)}] {pdf_file}")
             
             # Convert PDF to images
-            images = convert_pdf_to_images(pdf_path, pdf_output_folder)
-            subject_results[pdf_file] = images
+            page_count = convert_pdf_to_images(pdf_path, subject_output_folder, pdf_name)
+            subject_images += page_count
+            total_pdfs += 1
+            
+            # Force cleanup between PDFs
+            gc.collect()
         
-        results[subject] = subject_results
+        total_images += subject_images
+        print(f"✅ {subject}: {len(pdf_files)} PDFs → {subject_images} images")
+        results[subject] = len(pdf_files)
     
+    print(f"\n🎉 Final Summary: {total_pdfs} PDFs → {total_images} images")
     return results
-
-
 
 def main():
     """Main function for standalone usage"""
     if len(sys.argv) < 2:
-        print("Usage: python pdf_to_image..py <folder_path> [output_folder]")
+        print("Usage: python pdf_converter.py <folder_path>")
         sys.exit(1)
     
     input_path = sys.argv[1]
-    output_folder = sys.argv[2] if len(sys.argv) > 2 else None
     
     if not os.path.isdir(input_path):
         print(f"❌ Error: {input_path} is not a valid folder")
         sys.exit(1)
     
-    # Process folder structure
-    results = convert_folder_to_images(input_path, output_folder)
+    print("🚀 Starting PDF to Images conversion...")
+    print("💡 Optimized for memory efficiency and stability")
+    print("=" * 50)
     
-    if results:
-        total_pdfs = sum(len(subject_results) for subject_results in results.values())
-        total_images = sum(
-            len(images) for subject_results in results.values() 
-            for images in subject_results.values()
-        )
-        print(f"✅ Converted {total_pdfs} PDFs to {total_images} images")
-    else:
+    # Process folder structure
+    results = convert_folder_to_images(input_path)
+    
+    if not results:
         print("❌ No PDFs were converted")
         sys.exit(1)
 

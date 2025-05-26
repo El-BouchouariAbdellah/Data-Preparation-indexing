@@ -5,18 +5,6 @@ from pdf2image import convert_from_path
 from PIL import Image
 
 def convert_pdf_to_images(pdf_path, output_folder=None, pdf_name_for_filename=None, dpi=200):
-    """
-    Convert a single PDF to images with memory optimization
-    
-    Args:
-        pdf_path: Path to the PDF file
-        output_folder: Folder to save images
-        pdf_name_for_filename: PDF name to include in image filenames
-        dpi: Resolution for conversion (reduced from 300 to 200 for performance)
-    
-    Returns:
-        Number of pages converted
-    """
     try:
         print(f"Converting {os.path.basename(pdf_path)}...")
         
@@ -27,7 +15,7 @@ def convert_pdf_to_images(pdf_path, output_folder=None, pdf_name_for_filename=No
         batch_size = 5  # Process 5 pages at a time
         page_count = 0
         
-        # Get total page count first (lightweight operation)
+        # Get total page count first (lightweight operation) just to check if the pdf is valid  
         try:
             # Use a small DPI just to count pages
             temp_pages = convert_from_path(pdf_path, dpi=50, fmt='JPEG', first_page=1, last_page=1)
@@ -100,15 +88,7 @@ def convert_pdf_to_images(pdf_path, output_folder=None, pdf_name_for_filename=No
         gc.collect()
 
 def convert_folder_to_images(folder_path):
-    """
-    Convert all PDFs in a folder structure to images with memory optimization
     
-    Args:
-        folder_path: Root folder containing subfolders with PDFs
-    
-    Returns:
-        Dictionary with results per subject
-    """
     results = {}
     
     if not os.path.exists(folder_path):

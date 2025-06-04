@@ -90,7 +90,7 @@ def tag_and_collect_documents(base_path, metadata_map, default_g, default_s):
 
 # --- Main execution block ---
 if __name__ == "__main__":
-    print("Starting Step 2: Document Tagging...")
+    print("Starting Document Tagging...")
 
     # Call the tagging function
     tagged_curriculum_data = tag_and_collect_documents(

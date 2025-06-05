@@ -11,7 +11,6 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
-# --- NEW IMPORT ---
 from langchain_community.embeddings import HuggingFaceEmbeddings # Import the wrapper
 # ------------------
 

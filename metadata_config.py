@@ -31,15 +31,13 @@ def tag_and_collect_documents(base_path, metadata_map, default_g, default_s):
 
     print(f"\n--- Starting Document Tagging from: {base_path} ---")
 
-    # Loop through each folder directly inside the base path (these are your subject folders)
+    # Loop through each folder directly inside the base path 
     for subject_folder_name in os.listdir(base_path):
         subject_full_path = os.path.join(base_path, subject_folder_name)
 
-        # Skip if it's not a directory or if it's a hidden folder/file
         if not os.path.isdir(subject_full_path) or subject_folder_name.startswith('.'):
             continue
 
-        # --- Determine Grade and Subject for this subject folder ---
         metadata_for_subject = metadata_map.get(subject_folder_name, { # dictionary.get(key, default_value)  
             "grade": default_g,
             "subject": default_s
@@ -47,9 +45,8 @@ def tag_and_collect_documents(base_path, metadata_map, default_g, default_s):
         current_grade = metadata_for_subject["grade"]
         current_subject = metadata_for_subject["subject"]
         print(f"\n📁 Processing subject folder: '{subject_folder_name}' (Assigned Grade: {current_grade}, Subject: {current_subject})")
-        # -----------------------------------------------------------
 
-        # Now, list .txt files DIRECTLY in the subject_full_path (e.g., in 'Français' folder)
+        # Now, list .txt files DIRECTLY in the subject_full_path 
         cleaned_text_files = [f for f in os.listdir(subject_full_path) if f.endswith('.txt')]
         if not cleaned_text_files:
             print(f"  ⚠️  No .txt files found directly in '{subject_full_path}'. Skipping this subject.")
@@ -100,7 +97,7 @@ if __name__ == "__main__":
         DEFAULT_SUBJECT
     )
 
-    # Save the result to a JSON file. This file will be the input for the next step (Chunking).
+  
     try:
         # Save the output JSON in the same directory as the script.
         output_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), TAGGED_DATA_OUTPUT_FILE)

@@ -97,11 +97,10 @@ def get_grade_appropriate_context(query_text: str, student_grade: int, initial_k
 # Function to detect query language 
 def detect_query_language(query: str) -> str:
     try:
-        # Use langdetect to detect the language
         lang = detect(query)
         return lang
     except Exception:
-        return 'en' # Default to English if detection fails or query is too short
+        return 'en' 
 
 
 #  LLM Interaction Function 
@@ -215,7 +214,7 @@ def get_llm_response(student_query: str, retrieved_context_docs: List[Document],
         print(f"❌ Error generating response from LLM: {e}")
         return "Sorry, I am having trouble understanding your question right now. Please try again." # Default English fallback
 
-# --- Main Chatbot Loop ---
+# Main Chatbot Loop 
 if __name__ == "__main__":
     print("🚀 Démarrage du Chatbot Adapté au Niveau Scolaire 🚀")
     print("=" * 50)

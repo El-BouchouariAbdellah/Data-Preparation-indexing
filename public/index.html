@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuteur IA - Démonstration RAG</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen flex items-center justify-center font-inter">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg mx-4 border-b-4 border-blue-400">
+        <h1 class="text-3xl font-extrabold text-center text-gray-800 mb-6">Tuteur IA : Démonstration RAG</h1>
+        
+        <div class="mb-6 flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+            <span class="text-lg font-medium text-gray-700">Mode RAG</span>
+            <label class="switch">
+                <input type="checkbox" id="ragToggle" checked>
+                <span class="slider round"></span>
+            </label>
+        </div>
+
+        <div class="mb-4">
+            <textarea id="questionInput" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y min-h-[100px] text-gray-700" placeholder="Posez votre question à l'élève de 6e année... (Ex: 'C'est quoi la photosynthèse ?' ou 'C'est quoi les limites ?')" rows="4"></textarea>
+        </div>
+        
+        <button id="askButton" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-lg">
+            Demander au Tuteur
+        </button>
+
+        <div id="responseArea" class="mt-8 bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-inner max-h-[300px] overflow-y-auto text-gray-800">
+            <p class="text-gray-600 italic">La réponse du tuteur apparaîtra ici...</p>
+        </div>
+
+        <div id="loadingIndicator" class="hidden text-center mt-4 text-blue-600 font-semibold animate-pulse">
+            Chargement de la réponse...
+        </div>
+        
+        <div id="errorIndicator" class="hidden text-center mt-4 text-red-600 font-semibold">
+            <p>Désolé, une erreur est survenue.</p>
+            <p class="text-sm">Veuillez vérifier la console du serveur Node.js pour les détails ou réessayer plus tard.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
